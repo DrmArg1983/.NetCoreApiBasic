@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Net.Http;
+using System.Reflection;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
@@ -10,7 +11,7 @@ using netCoreWebApi.Proxies;
 using Polly;
 using Polly.Registry;
 using Refit;
-
+using Swashbuckle.AspNetCore.Swagger;
 
 namespace netCoreWebApi
 {
@@ -33,6 +34,7 @@ namespace netCoreWebApi
             services.Configure<PostsApiOptions>(Configuration.GetSection("PostsApiOptions"));
 
             ConfigurePolicies(services);
+            ConfigureOpenApi(services);
             ConfigureHttpClients(services);
         }
 
@@ -42,6 +44,15 @@ namespace netCoreWebApi
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
+
+                // Do not expose Swagger interface in production
+                app.UseSwagger();
+
+                app.UseSwaggerUI(c =>
+                {
+                    c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
+                    c.RoutePrefix = string.Empty;
+                });
             }
             else
             {
@@ -58,6 +69,14 @@ namespace netCoreWebApi
             policyRegistry = services.AddPolicyRegistry();
             var timeoutPolicy = Policy.TimeoutAsync<HttpResponseMessage>(TimeSpan.FromMilliseconds(1500));
             policyRegistry.Add("timeout", timeoutPolicy);
+        }
+
+        void ConfigureOpenApi(IServiceCollection services)
+        {
+            services.AddSwaggerGen(c =>
+            {
+                c.SwaggerDoc("v1", new Info { Title = "My Posts API", Version = "v1" });
+            });
         }
 
         void ConfigureHttpClients(IServiceCollection services)
