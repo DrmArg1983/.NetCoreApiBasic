@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using netCoreWebApi.Model;
 using netCoreWebApi.Proxies;
+using Polly.Timeout;
 
 namespace netCoreWebApi.Controllers
 {
@@ -45,6 +46,11 @@ namespace netCoreWebApi.Controllers
             {
                //log something with ex
                 return StatusCode(StatusCodes.Status502BadGateway, "Failed request to external resource.");
+            }
+            catch (TimeoutRejectedException ex)
+            {
+                //log something with ex
+                return StatusCode(StatusCodes.Status504GatewayTimeout, "Timeout on external web request.");
             }
             catch (Exception ex)
             {
